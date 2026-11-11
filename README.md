@@ -54,8 +54,7 @@ Advantages of v13:
 1. Install Docker, Docker Compose and Git for your own OS. Linux is highly recommended as a platform to host this bot on. Windows (Server) will work, but you will be missing out on a lot of performance.
 2. Navigate into a directory you want to place the project directory in using `cd`.
 3. Clone this repository using Git: `git clone https://github.com/jack3898/discord-youtube-bot-2`.
-4. Rename `.env-example` to `.env`.
-   1. Note: Using .env is not a requirement. You can create environment variables in your system instead.
+4. Copy `.env-example` to `.env` and fill in the values. The provided Compose configuration expects this file; if you supply environment variables another way, update the bot service's `env_file` setting too.
 5. Fill in the requirements for the environment variables.
 
    1. `DISCORD_TOKEN` & `CLIENT_ID` - Which you can create/find https://discord.com/developers. This bot also requires the `applications.commands` permission otherwise you will not be able to use slash commands.
@@ -68,9 +67,45 @@ _Note: Commands will not immediately appear in Discord, and can take up to 1 hou
 
 ### Daily activity limits
 
-Administrators can use `/limits enroll` to enroll a member and set a daily limit from 1 to 1440 minutes, `/limits set` to change it, and `/limits unenroll` to stop tracking and remove the saved activity data. Enrolled members receive a DM explaining the tracking. The bot tracks time in voice channels and visible game activity reported by Discord presence; the combined daily total counts overlapping time once. It DMs a warning with about 15 minutes remaining and another message when the limit is reached. Daily totals reset at midnight in the host's local timezone.
+#### Setup
 
-Presence and member tracking require enabling the **Presence Intent** and **Server Members Intent** under the bot's privileged gateway intents in the Discord Developer Portal. Keep `/etc/localtime` configured on the host; Compose mounts it read-only into the bot container so midnight follows the host timezone. Members must allow DMs from the bot for alerts to arrive.
+1. In the Discord Developer Portal, open the bot application's **Bot** settings and enable **Presence Intent** and **Server Members Intent** under privileged gateway intents.
+2. Create and edit the environment file:
+
+   ```bash
+   cp .env-example .env
+   nano .env
+   ```
+
+   Set `DISCORD_TOKEN`, `CLIENT_ID` (the application's ID), `REDIS_HOST=redis`, and `NODE_ENV=production`. Set `GOOGLE_API_TOKEN` as well if you use YouTube API features. Compose passes `.env` to the bot container; `.dockerignore` keeps this secret file out of the built image. Do not commit or share `.env`.
+
+   The Compose Redis service must use Redis Stack Server, which includes RedisJSON.
+3. Pull the bot code and rebuild/restart it:
+
+   ```bash
+   sudo docker compose up -d --build
+   sudo docker compose logs --tail=50 bot
+   ```
+
+4. If `/limits` does not appear yet, wait for global slash-command registration to finish. Global commands can take up to an hour to show in Discord.
+
+The Compose file mounts the host's `/etc/localtime` into the bot container. Keep the host timezone configured correctly; daily totals reset at midnight in that timezone.
+
+#### Run the commands
+
+Only server administrators can manage limits. Use Discord's slash-command picker and select a subcommand:
+
+```text
+/limits enroll member:@member limit_minutes:120
+/limits set member:@member limit_minutes:90
+/limits unenroll member:@member
+```
+
+`enroll` starts tracking a server member and requires a daily limit from 1 to 1440 minutes. The member receives a DM explaining the tracking. `set` changes the limit for an enrolled member. `unenroll` stops tracking and permanently removes that member's saved activity totals and limit for this server. Bot accounts cannot be enrolled.
+
+#### What is counted
+
+The daily limit combines time connected to any voice channel with time Discord reports the member as playing a game. The two activities are counted as a union: if they overlap, that time counts once. Other presence states and activities, such as Online/Idle status or Spotify listening, do not count. The bot DMs the member when about 15 minutes remain and again when the limit is reached; it does not automatically disconnect them or stop their game. Members must allow DMs from the bot for notices and alerts to arrive.
 
 ### ARM64 / DietPi
 
