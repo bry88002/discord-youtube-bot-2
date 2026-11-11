@@ -14,4 +14,4 @@ USER node
 
 RUN npm i
 
-CMD ["npm", "run", "bot"];
+CMD ["npm", "run", "bot"]
