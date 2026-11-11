@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * This function registers all slash commands to the Discord API.
+ * This function registers the supported slash commands to the Discord API.
  * It also stores all command classes in the globals object to be used later.
  */
 export async function registerCommands() {
@@ -23,14 +23,19 @@ export async function registerCommands() {
 
 	// This section simply finds all command classes.
 	const commandModulePath = path.resolve('src', 'commands', 'modules');
-	const commandModuleResolvingEntries = fs.readdirSync(commandModulePath).map(async moduleName => {
+	const enabledCommandNames = new Set(['limits']);
+	const commandModuleNames = fs
+		.readdirSync(commandModulePath)
+		.filter(moduleName => enabledCommandNames.has(path.parse(moduleName).name.toLowerCase()));
+	const commandModuleResolvingEntries = commandModuleNames.map(async moduleName => {
 		const module = await import(`${commandModulePath}/${moduleName}`);
-		return [moduleName, module];
+		return [moduleName, module] as const;
 	});
 
 	const commandModules = await Promise.all(commandModuleResolvingEntries);
 
 	// Register all commands to the Discord API and add the commands to the globals commandModules Map() instance.
+	globals.commandModules.clear();
 	const slashCommandRegistrations = commandModules.map(module => {
 		const commandName = module[0].split('.')[0].toLowerCase(); // Remove the '.ts' at the end and force lowercase.
 		const commandClass = module[1].default;

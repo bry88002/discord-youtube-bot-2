@@ -1,10 +1,14 @@
-# Discord YouTube Bot 2 (beta)
+# Discord Activity Limit Bot
 
-This is the new Discord bot that supersedes the old v1 discord bot at https://github.com/jack3898/discord-youtube-bot.
+This branch focuses on daily member activity limits. The legacy music slash commands are disabled; the music implementation remains in the source tree but is not registered with Discord.
 
-A lot of music bots are private and proprietary (and lock features behind a paywall), and additionally, YouTube have been targeting large Discord bots for takedown. As this bot is open source, you can use it assured YouTube can't do anything to bring it down as you have the code on your own server and is not commercially available.
+## Active command
 
-## Features
+`/limits` enrolls members and manages their daily game/voice activity limits.
+
+### Legacy music commands (disabled)
+
+The legacy commands below are retained in the source tree only; they are not registered with Discord and are unavailable.
 
 | Command   | What it does                                                                                          | Screenshot                                                                                                      |
 | --------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -25,43 +29,45 @@ A lot of music bots are private and proprietary (and lock features behind a payw
 | /search   | Search and pick a video to add to the queue using an interactive dropdown.                            | ![image](https://user-images.githubusercontent.com/28375223/149211506-5871f652-9116-49f0-8c97-7d63209ffb0c.png) |
 | /remove   | With a queue number, remove a specific item from the queue.                                           |                                                                                                                 |
 | /loop     | Loop the queue.                                                                                       |                                                                                                                 |
-| /limits   | Enroll members and manage their daily game/voice activity limits.                                      |                                                                                                                 |
 
-TIP: Typing "/" in the Discord text channel will give you automatic suggestions of commands and will auto-complete options as you type the command!
+Discord may take up to an hour to remove the previously registered music commands after the bot updates its slash-command list.
 
 ## Technologies
 
-This bot is proudly powered with Node.js, TypeScript & Redis.
-It also uses the newest Discord.js v13 library which leverages the latest Discord v9 bot API!
+This bot uses Node.js, TypeScript, Discord.js v13, Redis Stack, and Docker Compose.
 
 - Node.js v16/v17
 - Discord.js v13
 - TypeScript
 - Redis (using the new v4 npm library)
 
-Because of Discord.js v13 using the very new Discord v9 API, the bot leverages **slash commands** and **interactive message components**!
+The bot currently uses Discord's slash-command interface for `/limits`.
 
 Advantages of v13:
 
-- `!help` is not needed. Typing "/" will give you a list of commands natively in Discord.
+- Typing "/" in a server text channel shows available commands and their options.
 - Commands can be autocompleted and give you a description of each argument as you go.
 - Discord type checks your arguments and enforces required arguments so its much harder to make a mistake typing a command.
-- This bot has interactive buttons and dropdown lists! In the chat!
 - No conflict with other bots that are also using slash commands. This bot will ALWAYS use a forward slash to initiate a command.
 
 ## Setup for production
 
 1. Install Docker, Docker Compose and Git for your own OS. Linux is highly recommended as a platform to host this bot on. Windows (Server) will work, but you will be missing out on a lot of performance.
 2. Navigate into a directory you want to place the project directory in using `cd`.
-3. Clone this repository using Git: `git clone https://github.com/jack3898/discord-youtube-bot-2`.
+3. Clone the activity-limit branch:
+
+   ```bash
+   git clone --branch bry88002-arm64-deployment --single-branch https://github.com/bry88002/discord-youtube-bot-2.git
+   cd discord-youtube-bot-2
+   ```
 4. Copy `.env-example` to `.env` and fill in the values. The provided Compose configuration expects this file; if you supply environment variables another way, update the bot service's `env_file` setting too.
 5. Fill in the requirements for the environment variables.
 
    1. `DISCORD_TOKEN` & `CLIENT_ID` - Which you can create/find https://discord.com/developers. This bot also requires the `applications.commands` permission otherwise you will not be able to use slash commands.
    2. `DEV_GUILD_ID` - For developers only. You do not need to fill this in if you are not a developer.
-   3. `GOOGLE_API_TOKEN` - Which you can create in the Google Cloud platform https://console.cloud.google.com/apis/api/youtube.googleapis.com/credentials.
+   3. `GOOGLE_API_TOKEN` is not required for the currently enabled `/limits` command.
 
-6. Run `docker-compose up --build --detach`. This will build the bot, and run it.
+6. Run `sudo docker compose up --build -d` to build and start the bot.
 
 _Note: Commands will not immediately appear in Discord, and can take up to 1 hour to register to Discord's servers. Just keep checking, and they should appear soon (assuming everything is set up properly!)_
 
@@ -115,9 +121,27 @@ On the device, confirm `uname -m` reports `aarch64`, then follow the production 
 
 ## How to update the bot
 
-1. Pull the latest code from this repository with `git pull`. This will not override your .env file, but it is a good idea to check the .env-example file to ensure you meet the latest environment variable requirements.
-2. Rebuild the Docker containers with `docker-compose up --build`.
+1. Pull the latest code from the deployment branch with `git pull --ff-only origin bry88002-arm64-deployment`. This will not override your `.env` file.
+2. Rebuild the Docker containers with `sudo docker compose up -d --build`.
 3. Done!
+
+## Docker cheat sheet
+
+Run these commands from the directory containing `docker-compose.yml`. On DietPi, prepend `sudo` if your account is not in the `docker` group.
+
+| Task | Command |
+| --- | --- |
+| Build and start services | `sudo docker compose up -d --build` |
+| Show service status | `sudo docker compose ps` |
+| Follow bot logs | `sudo docker compose logs -f --tail=100 bot` |
+| Show recent Redis logs | `sudo docker compose logs --tail=100 redis` |
+| Restart the bot | `sudo docker compose restart bot` |
+| Stop services without removing containers | `sudo docker compose stop` |
+| Start stopped services | `sudo docker compose start` |
+| Check Redis responds | `sudo docker compose exec redis redis-cli PING` |
+| Validate Compose configuration | `sudo docker compose config` |
+
+`docker compose down` removes the containers. This Compose setup does not mount Redis data to a persistent volume, so removing or recreating the Redis container deletes saved activity limits and totals. Avoid `down` or recreating Redis unless you are okay with losing that data.
 
 ## Licensed under the GNU GPL v3
 
