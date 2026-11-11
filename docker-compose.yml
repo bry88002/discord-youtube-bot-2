@@ -3,9 +3,7 @@ version: '3'
 services:
   redis:
     container_name: redis
-    image: redislabs/rejson
-    sysctls:
-      - net.core.somaxconn=1024
+    image: redis/redis-stack-server:7.4.0-v8
     restart: always
 
   bot:
@@ -13,4 +11,6 @@ services:
     depends_on:
       - redis
     build: .
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     restart: always

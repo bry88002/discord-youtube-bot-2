@@ -25,6 +25,7 @@ A lot of music bots are private and proprietary (and lock features behind a payw
 | /search   | Search and pick a video to add to the queue using an interactive dropdown.                            | ![image](https://user-images.githubusercontent.com/28375223/149211506-5871f652-9116-49f0-8c97-7d63209ffb0c.png) |
 | /remove   | With a queue number, remove a specific item from the queue.                                           |                                                                                                                 |
 | /loop     | Loop the queue.                                                                                       |                                                                                                                 |
+| /limits   | Enroll members and manage their daily game/voice activity limits.                                      |                                                                                                                 |
 
 TIP: Typing "/" in the Discord text channel will give you automatic suggestions of commands and will auto-complete options as you type the command!
 
@@ -64,6 +65,18 @@ Advantages of v13:
 6. Run `docker-compose up --build --detach`. This will build the bot, and run it.
 
 _Note: Commands will not immediately appear in Discord, and can take up to 1 hour to register to Discord's servers. Just keep checking, and they should appear soon (assuming everything is set up properly!)_
+
+### Daily activity limits
+
+Administrators can use `/limits enroll` to enroll a member and set a daily limit from 1 to 1440 minutes, `/limits set` to change it, and `/limits unenroll` to stop tracking and remove the saved activity data. Enrolled members receive a DM explaining the tracking. The bot tracks time in voice channels and visible game activity reported by Discord presence; the combined daily total counts overlapping time once. It DMs a warning with about 15 minutes remaining and another message when the limit is reached. Daily totals reset at midnight in the host's local timezone.
+
+Presence and member tracking require enabling the **Presence Intent** and **Server Members Intent** under the bot's privileged gateway intents in the Discord Developer Portal. Keep `/etc/localtime` configured on the host; Compose mounts it read-only into the bot container so midnight follows the host timezone. Members must allow DMs from the bot for alerts to arrive.
+
+### ARM64 / DietPi
+
+The Docker setup supports 64-bit ARM Linux (such as an ARM64 DietPi installation). The bot image installs the build tools needed to compile `@discordjs/opus` on ARM64, and the Redis service uses Redis Stack Server for RedisJSON support.
+
+On the device, confirm `uname -m` reports `aarch64`, then follow the production setup above. Build and start the services with `docker compose up --build -d` (or `docker-compose` on older installations).
 
 ## How to update the bot
 

@@ -1,3 +1,4 @@
+export { activityLimitManager } from './modules/ActivityLimitManager';
 export { Cache } from './modules/Cache';
 export { CmdRequirementError } from './modules/CmdRequirementError';
 export { CommandInteractionHelper } from './modules/CommandInteractionHelper';
